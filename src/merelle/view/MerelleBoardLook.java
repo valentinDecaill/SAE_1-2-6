@@ -14,6 +14,7 @@ import boardifier.view.GridLook;
  * Each cell is 4 chars wide and 2 chars tall, so that there is enough space to draw
  * the board lines between the intersections.
  */
+
 public class MerelleBoardLook extends GridLook {
 
     // (row, col) of the 24 valid intersections on the 7x7 grid

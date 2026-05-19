@@ -48,13 +48,13 @@ public class MerelleStageView extends GameStageView {
 
         // the two pots that store the pawns waiting to be placed
         addLook(new MerellePawnPotLook(model.getBlackPot()));
-        addLook(new MerellePawnPotLook(model.getRedPot()));
+        addLook(new MerellePawnPotLook(model.getWhitePot()));
 
         // 9 black pawns + 9 white pawns
         for (MerellePawn pawn : model.getBlackPawns()) {
             addLook(new MerellePawnLook(pawn));
         }
-        for (MerellePawn pawn : model.getRedPawns()) {
+        for (MerellePawn pawn : model.getWhitePawns()) {
             addLook(new MerellePawnLook(pawn));
         }
     }
