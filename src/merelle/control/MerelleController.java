@@ -58,7 +58,16 @@ public class MerelleController extends Controller {
             MerelleDecider decider = new MerelleDecider(model, this);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
-            handleCaptureIfNeeded();
+
+            // Handle capture if the computer formed a mill
+            MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
+            if (stage.isCaptureMode()) {
+                int[] target = decider.chooseCaptureTarget(model.getIdPlayer());
+                if (target != null) {
+                    tryCapture(target[0], target[1], model.getIdPlayer());
+                }
+                stage.setCaptureMode(false);
+            }
         } else {
             playHumanTurn();
         }
@@ -122,8 +131,14 @@ public class MerelleController extends Controller {
     private boolean tryPlace(int row, int col, int color) {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
         MerelleBoard board = stage.getBoard();
-        if (!board.isValidIntersection(row, col)) return false;
-        if (!board.isEmptyAt(row, col)) return false;
+        if (!board.isValidIntersection(row, col)) {
+            System.out.println("Error: not a valid intersection.");
+            return false;
+        }
+        if (!board.isEmptyAt(row, col)) {
+            System.out.println("Error: intersection already occupied.");
+            return false;
+        }
 
         MerellePawnPot pot = (color == MerellePawn.PAWN_BLACK) ? stage.getBlackPot() : stage.getWhitePot();
         GameElement pawn = takeFirstPawn(pot);
@@ -146,12 +161,30 @@ public class MerelleController extends Controller {
     private boolean tryMove(int rSrc, int cSrc, int rDst, int cDst, int color) {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
         MerelleBoard board = stage.getBoard();
-        if (!board.isValidIntersection(rSrc, cSrc)) return false;
-        if (!board.isValidIntersection(rDst, cDst)) return false;
-        if (board.isEmptyAt(rSrc, cSrc)) return false;
-        if (!board.isEmptyAt(rDst, cDst)) return false;
-        if (board.getColorAt(rSrc, cSrc) != color) return false;
-        if (!stage.isFlying(color) && !board.areAdjacent(rSrc, cSrc, rDst, cDst)) return false;
+        if (!board.isValidIntersection(rSrc, cSrc)) {
+            System.out.println("Error: source is not a valid intersection.");
+            return false;
+        }
+        if (!board.isValidIntersection(rDst, cDst)) {
+            System.out.println("Error: destination is not a valid intersection.");
+            return false;
+        }
+        if (board.isEmptyAt(rSrc, cSrc)) {
+            System.out.println("Error: no pawn at source.");
+            return false;
+        }
+        if (!board.isEmptyAt(rDst, cDst)) {
+            System.out.println("Error: destination is not empty.");
+            return false;
+        }
+        if (board.getColorAt(rSrc, cSrc) != color) {
+            System.out.println("Error: not your pawn.");
+            return false;
+        }
+        if (!stage.isFlying(color) && !board.areAdjacent(rSrc, cSrc, rDst, cDst)) {
+            System.out.println("Error: destination is not adjacent (and you are not flying).");
+            return false;
+        }
 
         GameElement pawn = board.getElement(rSrc, cSrc);
         ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, rDst, cDst);
@@ -169,10 +202,22 @@ public class MerelleController extends Controller {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
         MerelleBoard board = stage.getBoard();
         int opponent = 1 - color;
-        if (!board.isValidIntersection(row, col)) return false;
-        if (board.isEmptyAt(row, col)) return false;
-        if (board.getColorAt(row, col) != opponent) return false;
-        if (board.isInMill(row, col) && !allOpponentPawnsInMill(opponent)) return false;
+        if (!board.isValidIntersection(row, col)) {
+            System.out.println("Error: not a valid intersection.");
+            return false;
+        }
+        if (board.isEmptyAt(row, col)) {
+            System.out.println("Error: no pawn to capture.");
+            return false;
+        }
+        if (board.getColorAt(row, col) != opponent) {
+            System.out.println("Error: this is your own pawn.");
+            return false;
+        }
+        if (board.isInMill(row, col) && !allOpponentPawnsInMill(opponent)) {
+            System.out.println("Error: cannot capture a pawn in a mill unless all opponent pawns are in mills.");
+            return false;
+        }
 
         GameElement pawn = board.getElement(row, col);
         ActionList actions = ActionFactory.generateRemoveFromStage(model, pawn);
@@ -200,10 +245,7 @@ public class MerelleController extends Controller {
 
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
-            MerelleDecider decider = new MerelleDecider(model, this);
-            int[] target = decider.chooseCaptureTarget(model.getIdPlayer());
-            if (target != null) tryCapture(target[0], target[1], model.getIdPlayer());
-            stage.setCaptureMode(false);
+            // Already handled in playTurn() for computer
             return;
         }
 
