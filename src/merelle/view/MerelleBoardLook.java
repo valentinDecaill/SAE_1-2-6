@@ -10,14 +10,11 @@ import boardifier.view.GridLook;
  *
  * Coordinates are shown around the board : letters A to G on the top,
  * and digits 1 to 7 on the left.
- *
- * Each cell is 4 chars wide and 2 chars tall, so that there is enough space to draw
- * the board lines between the intersections.
  */
 
 public class MerelleBoardLook extends GridLook {
 
-    // (row, col) of the 24 valid intersections on the 7x7 grid
+    // row and col of the 24 valid intersections on the 7x7 grid
     private static final int[][] INTERSECTIONS = {
             {0,0}, {0,3}, {0,6},
             {1,1}, {1,3}, {1,5},
