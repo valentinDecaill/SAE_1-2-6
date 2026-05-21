@@ -28,10 +28,15 @@ import java.util.Scanner;
 public class MerelleController extends Controller {
 
     private Scanner input;
+    private int aiStrategy = MerelleDecider.STRATEGY_RANDOM;
 
     public MerelleController(Model model, View view) {
         super(model, view);
         input = new Scanner(System.in);
+    }
+
+    public void setAiStrategy(int strategy) {
+        this.aiStrategy = strategy;
     }
 
     @Override
@@ -58,6 +63,7 @@ public class MerelleController extends Controller {
             sleep(800);
 
             MerelleDecider decider = new MerelleDecider(model, this);
+            decider.setStrategy(aiStrategy);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
             sleep(500);
