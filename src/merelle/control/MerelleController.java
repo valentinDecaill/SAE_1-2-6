@@ -55,21 +55,36 @@ public class MerelleController extends Controller {
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
             System.out.println(p.getName() + " (computer) is thinking...");
+            sleep(800);
+
             MerelleDecider decider = new MerelleDecider(model, this);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
+            sleep(500);
 
             // Handle capture if the computer formed a mill
             MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
             if (stage.isCaptureMode()) {
+                System.out.println(p.getName() + " is choosing a pawn to capture...");
+                sleep(600);
+
                 int[] target = decider.chooseCaptureTarget(model.getIdPlayer());
                 if (target != null) {
                     tryCapture(target[0], target[1], model.getIdPlayer());
                 }
                 stage.setCaptureMode(false);
+                sleep(400);
             }
         } else {
             playHumanTurn();
+        }
+    }
+
+    private void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
