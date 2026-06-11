@@ -19,7 +19,10 @@ import merelle.view.MerellePawnLook;
 
 public class MerelleController extends Controller {
 
-    private int aiStrategy = MerelleDecider.STRATEGY_RANDOM;
+    private int[] aiStrategies = new int[] {
+            MerelleDecider.STRATEGY_RANDOM,
+            MerelleDecider.STRATEGY_RANDOM
+    };
     private GameElement selectedPawn = null;
     private static final int CELL_SIZE = 60;
     private static final double PAWN_RADIUS = MerellePawnLook.RADIUS;
@@ -29,7 +32,14 @@ public class MerelleController extends Controller {
     }
 
     public void setAiStrategy(int strategy) {
-        this.aiStrategy = strategy;
+        this.aiStrategies[0] = strategy;
+        this.aiStrategies[1] = strategy;
+    }
+
+    public void setAiStrategy(int playerId, int strategy) {
+        if (playerId >= 0 && playerId < aiStrategies.length) {
+            this.aiStrategies[playerId] = strategy;
+        }
     }
 
     private boolean isJavaFxAvailable() {
@@ -100,9 +110,11 @@ public class MerelleController extends Controller {
 
     private void playComputerTurn() {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
+        int playerId = model.getIdPlayer();
+        String playerName = model.getCurrentPlayer().getName();
 
         MerelleDecider decider = new MerelleDecider(model, this);
-        decider.setStrategy(aiStrategy);
+        decider.setStrategy(aiStrategies[playerId]);
         ActionList actions = decider.decide();
         ActionPlayer play = new ActionPlayer(model, this, actions);
         play.start();
@@ -120,16 +132,27 @@ public class MerelleController extends Controller {
             }
         }
         if (destRow != -1) {
-            stage.checkAndSetCaptureMode(stage.getBoard(), destRow, destCol, model.getIdPlayer());
+            stage.checkAndSetCaptureMode(stage.getBoard(), destRow, destCol, playerId);
+            if (stage.isCaptureMode()) {
+                System.out.println("[DEBUG] " + playerName + " formed a mill at (" + destRow + "," + destCol + ")");
+            }
         }
 
         if (stage.isCaptureMode()) {
-            int[] target = decider.chooseCaptureTarget(model.getIdPlayer());
+            int[] target = decider.chooseCaptureTarget(playerId);
             if (target != null) {
-                tryCapture(target[0], target[1], model.getIdPlayer());
+                boolean captured = tryCapture(target[0], target[1], playerId);
+                System.out.println("[DEBUG] " + playerName + " tries to capture (" + target[0] + "," + target[1] + ") -> " + (captured ? "SUCCESS" : "FAILED"));
+            } else {
+                System.out.println("[DEBUG] " + playerName + " formed a mill but chooseCaptureTarget returned null");
             }
             stage.setCaptureMode(false);
         }
+
+        int blackCount = stage.getBoard().countPawns(MerellePawn.PAWN_BLACK);
+        int whiteCount = stage.getBoard().countPawns(MerellePawn.PAWN_WHITE);
+        System.out.println("[DEBUG] Pions on board - Black: " + blackCount + " White: " + whiteCount);
+
         updateStatusText();
     }
 

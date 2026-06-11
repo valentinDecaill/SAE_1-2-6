@@ -129,7 +129,14 @@ public class MerelleGraphical extends Application {
         view.setScene(gameScene);
 
         MerelleController control = new MerelleController(model, view);
-        control.setAiStrategy(config.strategy);
+        if (config.mode == 2) {
+            // 2 Computers : computer1 = Smart, computer2 = Random
+            control.setAiStrategy(0, MerelleDecider.STRATEGY_HEURISTIC);
+            control.setAiStrategy(1, MerelleDecider.STRATEGY_RANDOM);
+        } else {
+            // Human vs Computer : use the chosen strategy for the AI player
+            control.setAiStrategy(config.strategy);
+        }
         control.setFirstStageName("merelle");
 
         Platform.runLater(() -> {

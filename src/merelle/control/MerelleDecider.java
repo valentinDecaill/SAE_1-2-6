@@ -67,9 +67,7 @@ public class MerelleDecider extends Decider {
         MerelleBoard board = stage.getBoard();
         List<int[]> empty = getEmptyIntersections(board);
         if (empty.isEmpty()) {
-            ActionList emptyList = new ActionList();
-            emptyList.setDoEndOfTurn(true);
-            return emptyList;
+            return new ActionList();
         }
         int[] cell = empty.get(random.nextInt(empty.size()));
         return executePlacement(stage, color, cell[0], cell[1]);
@@ -80,9 +78,7 @@ public class MerelleDecider extends Decider {
         List<int[]> empty = getEmptyIntersections(board);
 
         if (empty.isEmpty()) {
-            ActionList emptyList = new ActionList();
-            emptyList.setDoEndOfTurn(true);
-            return emptyList;
+            return new ActionList();
         }
 
         // Priority 1 : place a pawn that forms a mill
@@ -128,7 +124,6 @@ public class MerelleDecider extends Decider {
         else stage.decreaseWhitePawnsToPlace();
 
         ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "merelleboard", row, col);
-        actions.setDoEndOfTurn(true);
         return actions;
     }
 
@@ -148,7 +143,6 @@ public class MerelleDecider extends Decider {
 
         if (moves.isEmpty()) {
             ActionList empty = new ActionList();
-            empty.setDoEndOfTurn(true);
             return empty;
         }
 
@@ -163,7 +157,6 @@ public class MerelleDecider extends Decider {
 
         if (moves.isEmpty()) {
             ActionList empty = new ActionList();
-            empty.setDoEndOfTurn(true);
             return empty;
         }
 
@@ -204,7 +197,6 @@ public class MerelleDecider extends Decider {
         GameElement pawn = board.getElement(rSrc, cSrc);
 
         ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, rDst, cDst);
-        actions.setDoEndOfTurn(true);
         return actions;
     }
 
