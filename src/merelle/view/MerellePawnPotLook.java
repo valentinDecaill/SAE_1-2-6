@@ -1,18 +1,22 @@
 package merelle.view;
 
 import boardifier.model.ContainerElement;
-import boardifier.view.TableLook;
+import boardifier.view.ContainerLook;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
-/**
- * Pawn pot inherits from TableLook, using the constructor for
- * flexible cell sizes and a visible border. It implies that if there is no element in a cell
- * it has a zero size and thus, is not displayed. This is why during the game,
- * the pot will reduce in size because pawns are removed from the pot to be placed
- * on the main board. At the end, it will totally disappear.
- */
-public class MerellePawnPotLook extends TableLook {
+public class MerellePawnPotLook extends ContainerLook {
 
     public MerellePawnPotLook(ContainerElement containerElement) {
-        super(containerElement, -1, 1);
+        super(containerElement, 50, 50, 0);
+        setVerticalAlignment(ALIGN_MIDDLE);
+        setHorizontalAlignment(ALIGN_CENTER);
+
+        int potWidth = 50 * 3;
+        int potHeight = 50 * 3;
+        Rectangle bg = new Rectangle(potWidth, potHeight);
+        bg.setFill(Color.color(0.96, 0.96, 0.96));
+        bg.setStroke(Color.color(0.75, 0.75, 0.75));
+        getNode().getChildren().add(0, bg);
     }
 }

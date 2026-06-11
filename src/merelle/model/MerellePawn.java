@@ -10,13 +10,16 @@ import boardifier.model.GameStageModel;
  */
 public class MerellePawn extends GameElement {
 
+    static {
+        ElementTypes.register("merellepawn", 50);
+    }
+
     private int color;
     public static int PAWN_BLACK = 0;
     public static int PAWN_WHITE = 1;
 
     public MerellePawn(int color, GameStageModel gameStageModel) {
         super(gameStageModel);
-        ElementTypes.register("merellepawn", 50);
         this.type = ElementTypes.getType("merellepawn");
         this.color = color;
     }

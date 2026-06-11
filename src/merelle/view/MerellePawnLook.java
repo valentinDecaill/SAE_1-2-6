@@ -1,27 +1,42 @@
 package merelle.view;
 
 import boardifier.model.GameElement;
-import boardifier.view.ConsoleColor;
 import boardifier.view.ElementLook;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import merelle.model.MerellePawn;
 
 public class MerellePawnLook extends ElementLook {
 
+    private Circle circle;
+    public static final double RADIUS = 22;
+
     public MerellePawnLook(GameElement element) {
-        // Pawn look is constituted of a single character, so shape size = 1x1
-        super(element, 1, 1);
+        super(element, (int)(RADIUS * 2), (int)(RADIUS * 2));
+        setAnchorType(ANCHOR_TOPLEFT);
+        circle = new Circle(RADIUS, RADIUS, RADIUS);
+        getNode().getChildren().add(circle);
+    }
+
+    public void onSelectionChange() {
+        render();
     }
 
     protected void render() {
-        MerellePawn pawn = (MerellePawn)element;
-        // put in shape[0][0] the pawn's letter, with a color depending on the pawn color.
-        // black pawn  : white "B" on black background
-        // white pawn  : black "W" on white background
+        MerellePawn pawn = (MerellePawn) element;
         if (pawn.getColor() == MerellePawn.PAWN_BLACK) {
-            shape[0][0] = ConsoleColor.WHITE + ConsoleColor.BLACK_BACKGROUND + "B" + ConsoleColor.RESET;
+            circle.setFill(Color.BLACK);
+            circle.setStroke(Color.DARKGRAY);
+        } else {
+            circle.setFill(Color.WHITE);
+            circle.setStroke(Color.BLACK);
         }
-        else {
-            shape[0][0] = ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + "W" + ConsoleColor.RESET;
+        circle.setStrokeWidth(2);
+        if (element.isSelected()) {
+            circle.setEffect(new DropShadow(10, Color.GOLD));
+        } else {
+            circle.setEffect(null);
         }
     }
 }

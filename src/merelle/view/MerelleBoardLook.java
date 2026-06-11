@@ -2,104 +2,90 @@ package merelle.view;
 
 import boardifier.model.ContainerElement;
 import boardifier.view.GridLook;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 
-/**
- * MerelleBoardLook draws the Nine Men's Morris board, that is 3 nested squares
- * linked by 4 middle lines. There are 24 valid intersections where pawns can be placed,
- * but the model is a 7x7 grid (the other cells are just empty).
- *
- * Coordinates are shown around the board : letters A to G on the top,
- * and digits 1 to 7 on the left.
- */
+import java.util.ArrayList;
+import java.util.List;
 
 public class MerelleBoardLook extends GridLook {
 
-    // row and col of the 24 valid intersections on the 7x7 grid
-    private static final int[][] INTERSECTIONS = {
-            {0,0}, {0,3}, {0,6},
-            {1,1}, {1,3}, {1,5},
-            {2,2}, {2,3}, {2,4},
-            {3,0}, {3,1}, {3,2}, {3,4}, {3,5}, {3,6},
-            {4,2}, {4,3}, {4,4},
-            {5,1}, {5,3}, {5,5},
-            {6,0}, {6,3}, {6,6}
-    };
+    private static final int CELL_SIZE = 60;
+
+    private final List<Circle> highlights = new ArrayList<>();
 
     public MerelleBoardLook(ContainerElement board) {
-        // rowHeight=2, colWidth=4, depth=0, innersTop=1, innersLeft=2, borderWidth=0
-        // innersTop and innersLeft leave space for the coordinates
-        // borderWidth=0 because the default grid borders are not what we want for Merelle.
-        super(2, 4, board, 0, 1, 2, 0);
+        super(CELL_SIZE, CELL_SIZE, board, 0, 0, 0, 0);
+        setVerticalAlignment(ALIGN_MIDDLE);
+        setHorizontalAlignment(ALIGN_CENTER);
+        drawLines();
+        drawDots();
+    }
+
+    private void drawLines() {
+        addLine(0, 0, 0, 6);
+        addLine(6, 0, 6, 6);
+        addLine(0, 0, 6, 0);
+        addLine(0, 6, 6, 6);
+        addLine(1, 1, 1, 5);
+        addLine(5, 1, 5, 5);
+        addLine(1, 1, 5, 1);
+        addLine(1, 5, 5, 5);
+        addLine(2, 2, 2, 4);
+        addLine(4, 2, 4, 4);
+        addLine(2, 2, 4, 2);
+        addLine(2, 4, 4, 4);
+        addLine(3, 0, 3, 2);
+        addLine(3, 4, 3, 6);
+        addLine(0, 3, 2, 3);
+        addLine(4, 3, 6, 3);
+    }
+
+    private void drawDots() {
+        double offset = CELL_SIZE / 2.0;
+        for (int[] inter : merelle.model.MerelleBoard.INTERSECTIONS) {
+            double cx = inter[1] * CELL_SIZE + offset;
+            double cy = inter[0] * CELL_SIZE + offset;
+            Circle dot = new Circle(cx, cy, 4);
+            dot.setFill(Color.BLACK);
+            getNode().getChildren().add(dot);
+        }
+    }
+
+    private void addLine(int r1, int c1, int r2, int c2) {
+        double offset = CELL_SIZE / 2.0;
+        double x1 = c1 * CELL_SIZE + offset;
+        double y1 = r1 * CELL_SIZE + offset;
+        double x2 = c2 * CELL_SIZE + offset;
+        double y2 = r2 * CELL_SIZE + offset;
+        Line line = new Line(x1, y1, x2, y2);
+        line.setStroke(Color.BLACK);
+        line.setStrokeWidth(2);
+        getNode().getChildren().add(line);
+    }
+
+    public void highlightCell(int row, int col) {
+        double offset = CELL_SIZE / 2.0;
+        double cx = col * CELL_SIZE + offset;
+        double cy = row * CELL_SIZE + offset;
+        Circle circle = new Circle(cx, cy, 8);
+        circle.setFill(Color.LIME);
+        circle.setOpacity(0.5);
+        getNode().getChildren().add(circle);
+        highlights.add(circle);
+    }
+
+    public void clearHighlights() {
+        for (Circle c : highlights) {
+            getNode().getChildren().remove(c);
+        }
+        highlights.clear();
     }
 
     protected void render() {
         setSize(getWidth(), getHeight());
         clearShape();
-        renderCoords();
-        renderBoard();
         renderInners();
-    }
-
-    // draw letters A to G on top and digits 1 to 7 on the left
-    private void renderCoords() {
-        for (int j = 0; j < 7; j++) {
-            int x = innersLeft + j * colWidth;
-            shape[0][x] = String.valueOf((char) ('A' + j));
-        }
-        for (int i = 0; i < 7; i++) {
-            int y = innersTop + i * rowHeight;
-            shape[y][0] = String.valueOf(i + 1);
-        }
-    }
-
-    // draw the 3 nested squares and the 4 middle lines, then a "+" on each intersection
-    private void renderBoard() {
-        // outer square
-        drawHLine(0, 0, 6);
-        drawHLine(6, 0, 6);
-        drawVLine(0, 6, 0);
-        drawVLine(0, 6, 6);
-        // middle square
-        drawHLine(1, 1, 5);
-        drawHLine(5, 1, 5);
-        drawVLine(1, 5, 1);
-        drawVLine(1, 5, 5);
-        // inner square
-        drawHLine(2, 2, 4);
-        drawHLine(4, 2, 4);
-        drawVLine(2, 4, 2);
-        drawVLine(2, 4, 4);
-        // middle lines that link the 3 squares
-        drawHLine(3, 0, 2);
-        drawHLine(3, 4, 6);
-        drawVLine(0, 2, 3);
-        drawVLine(4, 6, 3);
-
-        // put a "+" on each intersection (will be replaced by a pawn if there is one)
-        for (int[] inter : INTERSECTIONS) {
-            int x = innersLeft + inter[1] * colWidth;
-            int y = innersTop + inter[0] * rowHeight;
-            shape[y][x] = "+";
-        }
-    }
-
-    // draw an horizontal line on the given row, between two columns of the model grid
-    private void drawHLine(int row, int colStart, int colEnd) {
-        int y = innersTop + row * rowHeight;
-        int xStart = innersLeft + colStart * colWidth;
-        int xEnd = innersLeft + colEnd * colWidth;
-        for (int x = xStart + 1; x < xEnd; x++) {
-            shape[y][x] = "-";
-        }
-    }
-
-    // draw a vertical line on the given column, between two rows of the model grid
-    private void drawVLine(int rowStart, int rowEnd, int col) {
-        int x = innersLeft + col * colWidth;
-        int yStart = innersTop + rowStart * rowHeight;
-        int yEnd = innersTop + rowEnd * rowHeight;
-        for (int y = yStart + 1; y < yEnd; y++) {
-            shape[y][x] = "|";
-        }
     }
 }

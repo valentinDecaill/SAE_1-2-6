@@ -121,14 +121,11 @@ public class MerelleDecider extends Decider {
     }
 
     private ActionList executePlacement(MerelleStageModel stage, int color, int row, int col) {
-        MerelleBoard board = stage.getBoard();
         MerellePawnPot pot = (color == MerellePawn.PAWN_BLACK) ? stage.getBlackPot() : stage.getWhitePot();
         GameElement pawn = takeFirstPawn(pot);
 
         if (color == MerellePawn.PAWN_BLACK) stage.decreaseBlackPawnsToPlace();
         else stage.decreaseWhitePawnsToPlace();
-
-        if (board.formsMill(row, col, color)) stage.setCaptureMode(true);
 
         ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "merelleboard", row, col);
         actions.setDoEndOfTurn(true);
@@ -147,7 +144,7 @@ public class MerelleDecider extends Decider {
     private ActionList decideMovementRandom(MerelleStageModel stage, int color) {
         MerelleBoard board = stage.getBoard();
         boolean flying = stage.isFlying(color);
-        List<int[]> moves = getValidMoves(board, color, flying);
+        List<int[]> moves = getValidMoves(stage, board, color, flying);
 
         if (moves.isEmpty()) {
             ActionList empty = new ActionList();
@@ -162,7 +159,7 @@ public class MerelleDecider extends Decider {
     private ActionList decideMovementHeuristic(MerelleStageModel stage, int color) {
         MerelleBoard board = stage.getBoard();
         boolean flying = stage.isFlying(color);
-        List<int[]> moves = getValidMoves(board, color, flying);
+        List<int[]> moves = getValidMoves(stage, board, color, flying);
 
         if (moves.isEmpty()) {
             ActionList empty = new ActionList();
@@ -205,8 +202,6 @@ public class MerelleDecider extends Decider {
     private ActionList executeMovement(MerelleStageModel stage, int color, int rSrc, int cSrc, int rDst, int cDst) {
         MerelleBoard board = stage.getBoard();
         GameElement pawn = board.getElement(rSrc, cSrc);
-
-        if (board.formsMill(rDst, cDst, color)) stage.setCaptureMode(true);
 
         ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, rDst, cDst);
         actions.setDoEndOfTurn(true);
@@ -260,18 +255,30 @@ public class MerelleDecider extends Decider {
         return empty;
     }
 
-    private List<int[]> getValidMoves(MerelleBoard board, int color, boolean flying) {
+    private List<int[]> getValidMoves(MerelleStageModel stage, MerelleBoard board, int color, boolean flying) {
         List<int[]> moves = new ArrayList<>();
+        boolean hasRestriction = (!stage.getDestroyedMills().isEmpty() && stage.getPlayerWhoDestroyedMill() == color);
         for (int[] src : MerelleBoard.INTERSECTIONS) {
             if (board.getColorAt(src[0], src[1]) != color) continue;
             for (int[] dst : MerelleBoard.INTERSECTIONS) {
                 if (!board.isEmptyAt(dst[0], dst[1])) continue;
                 if (!flying && !board.areAdjacent(src[0], src[1], dst[0], dst[1])) continue;
+                if (hasRestriction) {
+                    boolean reformsAny = false;
+                    for (int[][] mill : stage.getDestroyedMills()) {
+                        if (MerelleBoard.wouldReformMill(board, mill, src[0], src[1], dst[0], dst[1], color)) {
+                            reformsAny = true;
+                            break;
+                        }
+                    }
+                    if (reformsAny) continue;
+                }
                 moves.add(new int[]{ src[0], src[1], dst[0], dst[1] });
             }
         }
         return moves;
     }
+
 
     private List<int[]> getAdjacentIntersections(MerelleBoard board, int row, int col) {
         List<int[]> adj = new ArrayList<>();
@@ -309,16 +316,7 @@ public class MerelleDecider extends Decider {
 
     private List<int[][]> getMillsContaining(int row, int col) {
         List<int[][]> result = new ArrayList<>();
-        // All 16 mills of the Merelle board
-        int[][][] allMills = {
-                { {0,0},{0,3},{0,6} }, { {1,1},{1,3},{1,5} }, { {2,2},{2,3},{2,4} },
-                { {3,0},{3,1},{3,2} }, { {3,4},{3,5},{3,6} },
-                { {4,2},{4,3},{4,4} }, { {5,1},{5,3},{5,5} }, { {6,0},{6,3},{6,6} },
-                { {0,0},{3,0},{6,0} }, { {1,1},{3,1},{5,1} }, { {2,2},{3,2},{4,2} },
-                { {0,3},{1,3},{2,3} }, { {4,3},{5,3},{6,3} },
-                { {2,4},{3,4},{4,4} }, { {1,5},{3,5},{5,5} }, { {0,6},{3,6},{6,6} }
-        };
-        for (int[][] mill : allMills) {
+        for (int[][] mill : MerelleBoard.MILLS) {
             for (int[] cell : mill) {
                 if (cell[0] == row && cell[1] == col) {
                     result.add(mill);
@@ -330,8 +328,10 @@ public class MerelleDecider extends Decider {
     }
 
     private GameElement takeFirstPawn(MerellePawnPot pot) {
-        for (int i = 0; i < 9; i++) {
-            if (!pot.isEmptyAt(i, 0)) return pot.getElement(i, 0);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (!pot.isEmptyAt(i, j)) return pot.getElement(i, j);
+            }
         }
         return null;
     }

@@ -22,7 +22,7 @@ public class MerelleBoard extends ContainerElement {
     };
 
     // the 16 possible mills (8 horizontals + 8 verticals)
-    private static final int[][][] MILLS = {
+    public static final int[][][] MILLS = {
             { {0,0},{0,3},{0,6} }, { {1,1},{1,3},{1,5} }, { {2,2},{2,3},{2,4} },
             { {3,0},{3,1},{3,2} }, { {3,4},{3,5},{3,6} },
             { {4,2},{4,3},{4,4} }, { {5,1},{5,3},{5,5} }, { {6,0},{6,3},{6,6} },
@@ -100,6 +100,68 @@ public class MerelleBoard extends ContainerElement {
         return formsMill(row, col, color);
     }
 
+    // return the first mill that contains (row, col) and is complete, or null
+    public int[][] getMillContaining(int row, int col) {
+        int color = getColorAt(row, col);
+        if (color == -1) return null;
+        for (int[][] mill : MILLS) {
+            boolean contains = false;
+            for (int[] cell : mill) {
+                if (cell[0] == row && cell[1] == col) contains = true;
+            }
+            if (!contains) continue;
+            boolean ok = true;
+            for (int[] cell : mill) {
+                if (getColorAt(cell[0], cell[1]) != color) ok = false;
+            }
+            if (ok) return mill;
+        }
+        return null;
+    }
+
+    // return all complete mills that contain (row, col)
+    public java.util.List<int[][]> getAllMillsContaining(int row, int col) {
+        int color = getColorAt(row, col);
+        if (color == -1) return java.util.Collections.emptyList();
+        java.util.List<int[][]> result = new java.util.ArrayList<>();
+        for (int[][] mill : MILLS) {
+            boolean contains = false;
+            for (int[] cell : mill) {
+                if (cell[0] == row && cell[1] == col) {
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains) continue;
+            boolean ok = true;
+            for (int[] cell : mill) {
+                if (getColorAt(cell[0], cell[1]) != color) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) result.add(mill);
+        }
+        return result;
+    }
+
+    // true if two mills contain exactly the same cells (order-independent)
+    public static boolean isSameMill(int[][] mill1, int[][] mill2) {
+        if (mill1 == null || mill2 == null) return false;
+        if (mill1.length != mill2.length) return false;
+        for (int[] c1 : mill1) {
+            boolean found = false;
+            for (int[] c2 : mill2) {
+                if (c1[0] == c2[0] && c1[1] == c2[1]) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
+    }
+
     // count the pawns of a color on the board
     public int countPawns(int color) {
         int count = 0;
@@ -122,4 +184,19 @@ public class MerelleBoard extends ContainerElement {
         }
         return false;
     }
+
+    // Check if moving a pawn from (rSrc,cSrc) to (rDst,cDst) would reform the given mill
+    public static boolean wouldReformMill(MerelleBoard board, int[][] mill, int rSrc, int cSrc, int rDst, int cDst, int color) {
+        for (int[] cell : mill) {
+            int r = cell[0], c = cell[1];
+            if (r == rDst && c == cDst) {
+                if (!board.isEmptyAt(rDst, cDst)) return false;
+                continue;
+            }
+            if (r == rSrc && c == cSrc) return false;
+            if (board.getColorAt(r, c) != color) return false;
+        }
+        return true;
+    }
+
 }
