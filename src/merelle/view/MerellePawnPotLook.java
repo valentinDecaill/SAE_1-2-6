@@ -17,6 +17,6 @@ public class MerellePawnPotLook extends ContainerLook {
         Rectangle bg = new Rectangle(potWidth, potHeight);
         bg.setFill(Color.color(0.96, 0.96, 0.96));
         bg.setStroke(Color.color(0.75, 0.75, 0.75));
-        getNode().getChildren().add(0, bg);
+        getGroup().getChildren().add(0, bg);
     }
 }

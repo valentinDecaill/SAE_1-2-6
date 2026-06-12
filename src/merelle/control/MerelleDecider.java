@@ -1,6 +1,5 @@
 package merelle.control;
 
-import boardifier.control.ActionFactory;
 import boardifier.control.Controller;
 import boardifier.control.Decider;
 import boardifier.model.GameElement;
@@ -29,6 +28,8 @@ public class MerelleDecider extends Decider {
 
     private static final Random random = new Random();
     private int strategy;
+    private int lastDestRow = -1;
+    private int lastDestCol = -1;
 
     public MerelleDecider(Model model, Controller control) {
         super(model, control);
@@ -42,6 +43,14 @@ public class MerelleDecider extends Decider {
 
     public int getStrategy() {
         return strategy;
+    }
+
+    public int getLastDestRow() {
+        return lastDestRow;
+    }
+
+    public int getLastDestCol() {
+        return lastDestCol;
     }
 
     @Override
@@ -119,12 +128,17 @@ public class MerelleDecider extends Decider {
     private ActionList executePlacement(MerelleStageModel stage, int color, int row, int col) {
         MerellePawnPot pot = (color == MerellePawn.PAWN_BLACK) ? stage.getBlackPot() : stage.getWhitePot();
         GameElement pawn = takeFirstPawn(pot);
+        if (pawn == null) return new ActionList();
+
+        pot.removeElement(pawn);
+        stage.getBoard().addElement(pawn, row, col);
 
         if (color == MerellePawn.PAWN_BLACK) stage.decreaseBlackPawnsToPlace();
         else stage.decreaseWhitePawnsToPlace();
 
-        ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "merelleboard", row, col);
-        return actions;
+        lastDestRow = row;
+        lastDestCol = col;
+        return new ActionList();
     }
 
     // ===================== MOVEMENT =====================
@@ -195,9 +209,20 @@ public class MerelleDecider extends Decider {
     private ActionList executeMovement(MerelleStageModel stage, int color, int rSrc, int cSrc, int rDst, int cDst) {
         MerelleBoard board = stage.getBoard();
         GameElement pawn = board.getElement(rSrc, cSrc);
+        if (pawn == null) return new ActionList();
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, rDst, cDst);
-        return actions;
+        java.util.List<int[][]> destroyedMills = board.getAllMillsContaining(rSrc, cSrc);
+        if (!destroyedMills.isEmpty()) {
+            stage.setLastDestroyedMill(destroyedMills.get(0), color);
+            for (int i = 1; i < destroyedMills.size(); i++) {
+                stage.addDestroyedMill(destroyedMills.get(i));
+            }
+        }
+
+        board.moveElement(pawn, rDst, cDst);
+        lastDestRow = rDst;
+        lastDestCol = cDst;
+        return new ActionList();
     }
 
     // ===================== CAPTURE =====================

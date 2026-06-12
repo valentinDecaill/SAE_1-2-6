@@ -16,9 +16,14 @@ public class MerelleBoardLook extends GridLook {
     private final List<Circle> highlights = new ArrayList<>();
 
     public MerelleBoardLook(ContainerElement board) {
-        super(CELL_SIZE, CELL_SIZE, board, 0, 0, 0, 0);
+        super(CELL_SIZE, CELL_SIZE, board, 0, 0, 0, 0, Color.TRANSPARENT);
         setVerticalAlignment(ALIGN_MIDDLE);
         setHorizontalAlignment(ALIGN_CENTER);
+    }
+
+    @Override
+    protected void render() {
+        super.render();
         drawLines();
         drawDots();
     }
@@ -49,7 +54,7 @@ public class MerelleBoardLook extends GridLook {
             double cy = inter[0] * CELL_SIZE + offset;
             Circle dot = new Circle(cx, cy, 4);
             dot.setFill(Color.BLACK);
-            getNode().getChildren().add(dot);
+            getGroup().getChildren().add(dot);
         }
     }
 
@@ -62,7 +67,7 @@ public class MerelleBoardLook extends GridLook {
         Line line = new Line(x1, y1, x2, y2);
         line.setStroke(Color.BLACK);
         line.setStrokeWidth(2);
-        getNode().getChildren().add(line);
+        getGroup().getChildren().add(line);
     }
 
     public void highlightCell(int row, int col) {
@@ -72,20 +77,14 @@ public class MerelleBoardLook extends GridLook {
         Circle circle = new Circle(cx, cy, 8);
         circle.setFill(Color.LIME);
         circle.setOpacity(0.5);
-        getNode().getChildren().add(circle);
+        getGroup().getChildren().add(circle);
         highlights.add(circle);
     }
 
     public void clearHighlights() {
         for (Circle c : highlights) {
-            getNode().getChildren().remove(c);
+            getGroup().getChildren().remove(c);
         }
         highlights.clear();
-    }
-
-    protected void render() {
-        setSize(getWidth(), getHeight());
-        clearShape();
-        renderInners();
     }
 }

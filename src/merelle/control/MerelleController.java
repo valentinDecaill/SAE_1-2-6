@@ -1,15 +1,14 @@
 package merelle.control;
 
-import boardifier.control.ActionFactory;
-import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
+import boardifier.control.ControllerMouse;
 import boardifier.model.Coord2D;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
-import boardifier.model.action.ActionList;
 import boardifier.view.ElementLook;
 import boardifier.view.View;
+import javafx.scene.input.MouseEvent;
 import merelle.model.MerelleBoard;
 import merelle.model.MerellePawn;
 import merelle.model.MerellePawnPot;
@@ -29,6 +28,7 @@ public class MerelleController extends Controller {
 
     public MerelleController(Model model, View view) {
         super(model, view);
+        new MerelleControllerMouse(model, view, this);
     }
 
     public void setAiStrategy(int strategy) {
@@ -77,15 +77,22 @@ public class MerelleController extends Controller {
         } catch (IllegalStateException e) {
             super.update();
             return;
+        } catch (Exception e) {
+            // Boardifier internal state may not be ready in headless/test mode.
+            return;
         }
-        javafx.application.Platform.runLater(() -> super.update());
+        javafx.application.Platform.runLater(() -> {
+            try {
+                super.update();
+            } catch (Exception ignored) {
+                // ignore in headless/test mode
+            }
+        });
     }
 
-    @Override
     public void stageLoop() {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
         updateStatusText();
-        update();
         while (!model.isEndStage()) {
             playTurn();
             stage.recordPosition();
@@ -94,7 +101,6 @@ public class MerelleController extends Controller {
                 endOfTurn();
                 updateStatusText();
             }
-            update();
         }
         endGame();
     }
@@ -115,22 +121,14 @@ public class MerelleController extends Controller {
 
         MerelleDecider decider = new MerelleDecider(model, this);
         decider.setStrategy(aiStrategies[playerId]);
-        ActionList actions = decider.decide();
-        ActionPlayer play = new ActionPlayer(model, this, actions);
-        play.start();
+        decider.decide();
 
-        int destRow = -1, destCol = -1;
-        for (java.util.List<boardifier.model.action.GameAction> pack : actions.getActions()) {
-            for (boardifier.model.action.GameAction action : pack) {
-                if (action instanceof boardifier.model.action.PutInContainerAction) {
-                    destRow = ((boardifier.model.action.PutInContainerAction) action).getRowDest();
-                    destCol = ((boardifier.model.action.PutInContainerAction) action).getColDest();
-                } else if (action instanceof boardifier.model.action.MoveWithinContainerAction) {
-                    destRow = ((boardifier.model.action.MoveWithinContainerAction) action).getRowDest();
-                    destCol = ((boardifier.model.action.MoveWithinContainerAction) action).getColDest();
-                }
-            }
-        }
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException ignored) {}
+
+        int destRow = decider.getLastDestRow();
+        int destCol = decider.getLastDestCol();
         if (destRow != -1) {
             stage.checkAndSetCaptureMode(stage.getBoard(), destRow, destCol, playerId);
             if (stage.isCaptureMode()) {
@@ -167,7 +165,6 @@ public class MerelleController extends Controller {
 
             if (stage.isCaptureMode()) {
                 done = handleCaptureClick(click, color);
-                update();
                 continue;
             }
 
@@ -180,7 +177,6 @@ public class MerelleController extends Controller {
                     done = !stage.isCaptureMode();
                 }
             }
-            update();
         }
     }
 
@@ -352,17 +348,17 @@ public class MerelleController extends Controller {
         GameElement pawn = takeFirstPawn(pot);
         if (pawn == null) return;
 
-        ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "merelleboard", row, col);
-        new ActionPlayer(model, this, actions).start();
+        pot.removeElement(pawn);
+        board.addElement(pawn, row, col);
 
         if (isJavaFxAvailable()) {
             try {
                 ElementLook look = getElementLook(pawn);
-                if (look != null && look.getNode() != null) {
+                if (look != null && look.getGroup() != null) {
                     javafx.application.Platform.runLater(() -> {
-                        look.getNode().setOpacity(0);
+                        look.getGroup().setOpacity(0);
                         javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
-                                javafx.util.Duration.millis(100), look.getNode());
+                                javafx.util.Duration.millis(100), look.getGroup());
                         ft.setToValue(1);
                         ft.play();
                     });
@@ -416,9 +412,7 @@ public class MerelleController extends Controller {
             }
         }
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, rDst, cDst);
-        new ActionPlayer(model, this, actions).start();
-        update();
+        board.moveElement(pawn, rDst, cDst);
 
         stage.checkAndSetCaptureMode(board, rDst, cDst, color);
         updateStatusText();
@@ -450,16 +444,16 @@ public class MerelleController extends Controller {
             }
         }
 
-        ActionList actions = ActionFactory.generateRemoveFromStage(model, pawn);
-        new ActionPlayer(model, this, actions).start();
+        board.removeElement(pawn);
+        pawn.setVisible(false);
 
         if (isJavaFxAvailable()) {
             try {
                 ElementLook look = getElementLook(pawn);
-                if (look != null && look.getNode() != null) {
+                if (look != null && look.getGroup() != null) {
                     javafx.application.Platform.runLater(() -> {
                         javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
-                                javafx.util.Duration.millis(100), look.getNode());
+                                javafx.util.Duration.millis(100), look.getGroup());
                         ft.setToValue(0);
                         ft.play();
                     });
@@ -507,5 +501,18 @@ public class MerelleController extends Controller {
 
     @Override
     public void endGame() {
+    }
+
+    private static class MerelleControllerMouse extends ControllerMouse {
+        public MerelleControllerMouse(Model model, View view, Controller control) {
+            super(model, view, control);
+        }
+
+        @Override
+        public void handle(MouseEvent event) {
+            if (model.isCaptureMouseEvent()) {
+                model.setLastClick(new Coord2D(event.getX(), event.getY()));
+            }
+        }
     }
 }

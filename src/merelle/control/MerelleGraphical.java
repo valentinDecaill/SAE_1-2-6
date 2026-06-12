@@ -3,6 +3,7 @@ package merelle.control;
 import boardifier.control.StageFactory;
 import boardifier.model.GameException;
 import boardifier.model.Model;
+import boardifier.view.RootPane;
 import boardifier.view.View;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -115,9 +116,6 @@ public class MerelleGraphical extends Application {
     }
 
     private void startGame(GameConfig config) {
-        Scene gameScene = new Scene(new javafx.scene.layout.Pane(), 700, 550);
-        primaryStage.setScene(gameScene);
-
         Model model = new Model(FRAME_GAP_MS * 1000000L);
         setupPlayers(model, config);
 
@@ -125,8 +123,7 @@ public class MerelleGraphical extends Application {
                 "merelle.model.MerelleStageModel",
                 "merelle.view.MerelleStageView");
 
-        View view = new View(model);
-        view.setScene(gameScene);
+        View view = new View(model, primaryStage, new RootPane());
 
         MerelleController control = new MerelleController(model, view);
         if (config.mode == 2) {
@@ -142,6 +139,7 @@ public class MerelleGraphical extends Application {
         Platform.runLater(() -> {
             try {
                 control.startGame();
+                primaryStage.setResizable(true);
                 Thread gameThread = new Thread(() -> {
                     control.stageLoop();
                     Platform.runLater(() -> showEndGame(model));

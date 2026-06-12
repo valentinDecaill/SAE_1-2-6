@@ -13,10 +13,10 @@ public class MerellePawnLook extends ElementLook {
     public static final double RADIUS = 22;
 
     public MerellePawnLook(GameElement element) {
-        super(element, (int)(RADIUS * 2), (int)(RADIUS * 2));
+        super(element, 1);
         setAnchorType(ANCHOR_TOPLEFT);
         circle = new Circle(RADIUS, RADIUS, RADIUS);
-        getNode().getChildren().add(circle);
+        getGroup().getChildren().add(circle);
     }
 
     public void onSelectionChange() {
