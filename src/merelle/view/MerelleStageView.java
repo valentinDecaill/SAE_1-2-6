@@ -10,6 +10,8 @@ public class MerelleStageView extends GameStageView {
 
     public MerelleStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
+        this.width = 700;
+        this.height = 550;
     }
 
     public void createLooks() {

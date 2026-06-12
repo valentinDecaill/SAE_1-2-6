@@ -140,6 +140,8 @@ public class MerelleGraphical extends Application {
             try {
                 control.startGame();
                 primaryStage.setResizable(true);
+                primaryStage.setMinWidth(700);
+                primaryStage.setMinHeight(550);
                 Thread gameThread = new Thread(() -> {
                     control.stageLoop();
                     Platform.runLater(() -> showEndGame(model));
