@@ -16,6 +16,9 @@ import merelle.model.MerelleStageModel;
 import merelle.view.MerelleBoardLook;
 import merelle.view.MerellePawnLook;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MerelleController extends Controller {
 
     private int[] aiStrategies = new int[] {
@@ -54,17 +57,23 @@ public class MerelleController extends Controller {
     private void updateStatusText() {
         MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
         String name = model.getCurrentPlayer().getName();
-        String msg;
+        String actionMsg;
+        String phaseMsg;
         if (stage.isCaptureMode()) {
-            msg = name + " - Capture an opponent pawn";
+            actionMsg = name + " - Capture a pawn";
+            phaseMsg = "Capture phase";
         } else if (stage.getPhase(model.getIdPlayer()) == MerelleStageModel.PHASE_PLACEMENT) {
-            msg = name + " - Place a pawn";
+            actionMsg = name + " - Place a pawn";
+            phaseMsg = "Phase 1: Placement";
         } else if (stage.isFlying(model.getIdPlayer())) {
-            msg = name + " - Fly a pawn";
+            actionMsg = name + " - Fly a pawn";
+            phaseMsg = "Phase 2: Movement (Flying)";
         } else {
-            msg = name + " - Move a pawn";
+            actionMsg = name + " - Move a pawn";
+            phaseMsg = "Phase 2: Movement";
         }
-        stage.getStatusText().setText(msg);
+        stage.getStatusText().setText(actionMsg);
+        stage.getPhaseText().setText(phaseMsg);
     }
 
     @Override
@@ -133,6 +142,7 @@ public class MerelleController extends Controller {
             stage.checkAndSetCaptureMode(stage.getBoard(), destRow, destCol, playerId);
             if (stage.isCaptureMode()) {
                 System.out.println("[DEBUG] " + playerName + " formed a mill at (" + destRow + "," + destCol + ")");
+                showCapturableHighlights(playerId);
             }
         }
 
@@ -145,6 +155,7 @@ public class MerelleController extends Controller {
                 System.out.println("[DEBUG] " + playerName + " formed a mill but chooseCaptureTarget returned null");
             }
             stage.setCaptureMode(false);
+            clearPawnHighlights();
         }
 
         int blackCount = stage.getBoard().countPawns(MerellePawn.PAWN_BLACK);
@@ -164,9 +175,13 @@ public class MerelleController extends Controller {
             if (click == null) continue;
 
             if (stage.isCaptureMode()) {
+                showCapturableHighlights(color);
                 done = handleCaptureClick(click, color);
+                if (!stage.isCaptureMode()) clearPawnHighlights();
                 continue;
             }
+
+            clearPawnHighlights();
 
             if (stage.getPhase(color) == MerelleStageModel.PHASE_PLACEMENT) {
                 if (handlePlacementClick(click, color)) {
@@ -301,24 +316,32 @@ public class MerelleController extends Controller {
     }
 
     private void showHighlights(MerellePawn pawn, int color) {
-        clearHighlights();
-        MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
-        MerelleBoard board = stage.getBoard();
-        int[] src = board.getElementCell(pawn);
-        if (src == null) return;
-        try {
-            MerelleBoardLook boardLook = (MerelleBoardLook) getElementLook(board);
-            for (int[] inter : MerelleBoard.INTERSECTIONS) {
-                if (isValidMove(src[0], src[1], inter[0], inter[1], color)) {
-                    boardLook.highlightCell(inter[0], inter[1]);
+        if (!isJavaFxAvailable()) return;
+        javafx.application.Platform.runLater(() -> {
+            clearHighlightsInternal();
+            MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
+            MerelleBoard board = stage.getBoard();
+            int[] src = board.getElementCell(pawn);
+            if (src == null) return;
+            try {
+                MerelleBoardLook boardLook = (MerelleBoardLook) getElementLook(board);
+                for (int[] inter : MerelleBoard.INTERSECTIONS) {
+                    if (isValidMove(src[0], src[1], inter[0], inter[1], color)) {
+                        boardLook.highlightCell(inter[0], inter[1]);
+                    }
                 }
+            } catch (Exception e) {
+                // headless or look not registered: ignore
             }
-        } catch (Exception e) {
-            // headless or look not registered: ignore
-        }
+        });
     }
 
     private void clearHighlights() {
+        if (!isJavaFxAvailable()) return;
+        javafx.application.Platform.runLater(this::clearHighlightsInternal);
+    }
+
+    private void clearHighlightsInternal() {
         try {
             MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
             MerelleBoard board = stage.getBoard();
@@ -327,6 +350,59 @@ public class MerelleController extends Controller {
         } catch (Exception e) {
             // headless or look not registered: ignore
         }
+    }
+
+    private List<MerellePawn> getCapturablePawns(int color) {
+        MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
+        MerelleBoard board = stage.getBoard();
+        int opponent = 1 - color;
+        List<MerellePawn> capturable = new ArrayList<>();
+        boolean allInMill = allOpponentPawnsInMill(opponent);
+        for (int[] inter : MerelleBoard.INTERSECTIONS) {
+            if (!board.isValidIntersection(inter[0], inter[1])) continue;
+            if (board.isEmptyAt(inter[0], inter[1])) continue;
+            if (board.getColorAt(inter[0], inter[1]) != opponent) continue;
+            if (board.isInMill(inter[0], inter[1]) && !allInMill) continue;
+            capturable.add((MerellePawn) board.getElement(inter[0], inter[1]));
+        }
+        return capturable;
+    }
+
+    private void showCapturableHighlights(int color) {
+        if (!isJavaFxAvailable()) return;
+        javafx.application.Platform.runLater(() -> {
+            for (MerellePawn pawn : getCapturablePawns(color)) {
+                try {
+                    MerellePawnLook look = (MerellePawnLook) getElementLook(pawn);
+                    if (look != null) look.setCapturable(true);
+                } catch (Exception e) {
+                    // headless or look not registered: ignore
+                }
+            }
+        });
+    }
+
+    private void clearPawnHighlights() {
+        if (!isJavaFxAvailable()) return;
+        javafx.application.Platform.runLater(() -> {
+            MerelleStageModel stage = (MerelleStageModel) model.getGameStage();
+            for (MerellePawn pawn : stage.getBlackPawns()) {
+                try {
+                    MerellePawnLook look = (MerellePawnLook) getElementLook(pawn);
+                    if (look != null) look.setCapturable(false);
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+            for (MerellePawn pawn : stage.getWhitePawns()) {
+                try {
+                    MerellePawnLook look = (MerellePawnLook) getElementLook(pawn);
+                    if (look != null) look.setCapturable(false);
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        });
     }
 
     boolean isValidPlace(int row, int col) {

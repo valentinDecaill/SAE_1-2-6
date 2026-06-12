@@ -18,6 +18,7 @@ public class MerelleStageView extends GameStageView {
         MerelleStageModel model = (MerelleStageModel) gameStageModel;
         addLook(new TextLook(16, "0x000000", model.getPlayerName()));
         addLook(new TextLook(16, "0x000000", model.getStatusText()));
+        addLook(new TextLook(18, "0x000000", model.getPhaseText()));
         addLook(new MerelleBoardLook(model.getBoard()));
         addLook(new MerellePawnPotLook(model.getBlackPot()));
         addLook(new MerellePawnPotLook(model.getWhitePot()));

@@ -29,6 +29,7 @@ public class MerelleStageModel extends GameStageModel {
     private MerellePawn[] whitePawns;
     private TextElement playerName;
     private TextElement statusText;
+    private TextElement phaseText;
 
     // state variables
     private int blackPawnsToPlace;
@@ -57,6 +58,7 @@ public class MerelleStageModel extends GameStageModel {
     public MerellePawn[] getWhitePawns() { return whitePawns; }
     public TextElement getPlayerName() { return playerName; }
     public TextElement getStatusText() { return statusText; }
+    public TextElement getPhaseText() { return phaseText; }
     public int getBlackPawnsToPlace() { return blackPawnsToPlace; }
     public int getWhitePawnsToPlace() { return whitePawnsToPlace; }
     public boolean isCaptureMode() { return captureMode; }
@@ -95,6 +97,10 @@ public class MerelleStageModel extends GameStageModel {
     public void setStatusText(TextElement statusText) {
         this.statusText = statusText;
         addElement(statusText);
+    }
+    public void setPhaseText(TextElement phaseText) {
+        this.phaseText = phaseText;
+        addElement(phaseText);
     }
 
     // --- state helpers ---

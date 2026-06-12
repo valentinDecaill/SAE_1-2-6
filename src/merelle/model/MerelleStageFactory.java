@@ -21,6 +21,10 @@ public class MerelleStageFactory extends StageElementsFactory {
         statusText.setLocation(50, 32);
         stageModel.setStatusText(statusText);
 
+        TextElement phaseText = new TextElement("Phase 1: Placement", stageModel);
+        phaseText.setLocation(520, 35);
+        stageModel.setPhaseText(phaseText);
+
         MerelleBoard board = new MerelleBoard(50, 60, stageModel);
         stageModel.setBoard(board);
 

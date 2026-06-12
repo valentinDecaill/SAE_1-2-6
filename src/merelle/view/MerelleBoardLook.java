@@ -74,9 +74,11 @@ public class MerelleBoardLook extends GridLook {
         double offset = CELL_SIZE / 2.0;
         double cx = col * CELL_SIZE + offset;
         double cy = row * CELL_SIZE + offset;
-        Circle circle = new Circle(cx, cy, 8);
-        circle.setFill(Color.LIME);
-        circle.setOpacity(0.5);
+        Circle circle = new Circle(cx, cy, 10);
+        circle.setFill(Color.LIMEGREEN);
+        circle.setOpacity(0.7);
+        circle.setStroke(Color.DARKGREEN);
+        circle.setStrokeWidth(1);
         getGroup().getChildren().add(circle);
         highlights.add(circle);
     }

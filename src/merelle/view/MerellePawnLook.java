@@ -11,12 +11,18 @@ public class MerellePawnLook extends ElementLook {
 
     private Circle circle;
     public static final double RADIUS = 22;
+    private boolean capturable = false;
 
     public MerellePawnLook(GameElement element) {
         super(element, 1);
         setAnchorType(ANCHOR_TOPLEFT);
         circle = new Circle(RADIUS, RADIUS, RADIUS);
         getGroup().getChildren().add(circle);
+    }
+
+    public void setCapturable(boolean capturable) {
+        this.capturable = capturable;
+        render();
     }
 
     public void onSelectionChange() {
@@ -35,6 +41,8 @@ public class MerellePawnLook extends ElementLook {
         circle.setStrokeWidth(2);
         if (element.isSelected()) {
             circle.setEffect(new DropShadow(10, Color.GOLD));
+        } else if (capturable) {
+            circle.setEffect(new DropShadow(10, Color.RED));
         } else {
             circle.setEffect(null);
         }

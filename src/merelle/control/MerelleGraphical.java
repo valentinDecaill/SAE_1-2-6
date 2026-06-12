@@ -38,12 +38,14 @@ public class MerelleGraphical extends Application {
         title.setFont(Font.font(24));
 
         Button newGameBtn = new Button("New Game");
+        Button rulesBtn = new Button("Rules");
         Button quitBtn = new Button("Quit");
 
         newGameBtn.setOnAction(e -> showGameDialog());
+        rulesBtn.setOnAction(e -> showRules());
         quitBtn.setOnAction(e -> Platform.exit());
 
-        root.getChildren().addAll(title, newGameBtn, quitBtn);
+        root.getChildren().addAll(title, newGameBtn, rulesBtn, quitBtn);
 
         Scene scene = new Scene(root, 400, 300);
         primaryStage.setTitle("Merelle");
@@ -113,6 +115,32 @@ public class MerelleGraphical extends Application {
 
         Optional<GameConfig> result = dialog.showAndWait();
         result.ifPresent(this::startGame);
+    }
+
+    private void showRules() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Rules");
+        alert.setHeaderText("Nine Men's Morris - Rules");
+        alert.setContentText(
+                "Nine Men's Morris is a strategy board game for 2 players.\n\n" +
+                "Material:\n" +
+                "- A board with 24 intersections\n" +
+                "- 9 black pawns and 9 white pawns\n\n" +
+                "Phase 1 - Placement:\n" +
+                "Players take turns placing one pawn on a free intersection.\n" +
+                "If a player forms a mill (3 pawns in a row), he captures one opponent pawn.\n" +
+                "Pawns in a mill cannot be captured unless all opponent pawns are in mills.\n\n" +
+                "Phase 2 - Movement:\n" +
+                "Players move one pawn to an adjacent free intersection.\n" +
+                "The mill rule also applies.\n\n" +
+                "Phase 3 - Flying:\n" +
+                "When a player has only 3 pawns left, he can move a pawn to any free intersection.\n\n" +
+                "Victory:\n" +
+                "A player wins if the opponent has fewer than 3 pawns,\n" +
+                "or if the opponent cannot move."
+        );
+        alert.getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        alert.showAndWait();
     }
 
     private void startGame(GameConfig config) {
